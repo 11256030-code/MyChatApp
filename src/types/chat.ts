@@ -45,5 +45,4 @@ export type ProfileInput = {
   name: string;
   birthday: string | null;
   avatar_url: string | null;
-  password?: string | null;
 };

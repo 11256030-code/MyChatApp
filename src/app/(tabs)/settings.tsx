@@ -8,7 +8,7 @@ import {
     TextInput,
     View,
 } from "react-native";
-import { updateProfile } from "../../api/chat";
+import { changePassword, updateProfile } from "../../api/chat";
 import { Screen } from "../../components/Screen";
 import { commonStyles } from "../../components/styles";
 import { UserAvatar } from "../../components/UserAvatar";
@@ -19,7 +19,8 @@ export default function SettingsScreen() {
   const [name, setName] = useState(user?.name ?? "");
   const [birthday, setBirthday] = useState(user?.birthday ?? "");
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url ?? "");
-  const [password, setPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -32,15 +33,6 @@ export default function SettingsScreen() {
 
   const onSave = async () => {
     if (!user) return;
-    if (password && password.length < 4) {
-      setError("密碼至少需要 4 碼");
-      return;
-    }
-    if (password && password !== confirmPassword) {
-      setError("兩次輸入的密碼不一致");
-      return;
-    }
-
     setMessage("");
     setError("");
     try {
@@ -48,14 +40,44 @@ export default function SettingsScreen() {
         name: name.trim(),
         birthday: birthday || null,
         avatar_url: avatarUrl || null,
-        password: password || null,
       });
       await setUser(updated);
-      setPassword("");
-      setConfirmPassword("");
       setMessage("已儲存個人設定");
     } catch (err) {
       setError(err instanceof Error ? err.message : "儲存失敗");
+    }
+  };
+
+  const onChangePassword = async () => {
+    if (!user) return;
+    setMessage("");
+    setError("");
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setError("請完整輸入目前密碼、新密碼與確認密碼");
+      return;
+    }
+    if (newPassword.length < 4 || newPassword.length > 60) {
+      setError("新密碼長度需為 4 至 60 碼");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("兩次輸入的新密碼不一致");
+      return;
+    }
+    if (currentPassword === newPassword) {
+      setError("新密碼不能與目前密碼相同");
+      return;
+    }
+
+    try {
+      await changePassword(user.id, currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setMessage("密碼已變更");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "變更密碼失敗");
     }
   };
 
@@ -85,11 +107,18 @@ export default function SettingsScreen() {
           onChangeText={setAvatarUrl}
         />
         <TextInput
+          placeholder="目前密碼"
+          secureTextEntry
+          style={commonStyles.input}
+          value={currentPassword}
+          onChangeText={setCurrentPassword}
+        />
+        <TextInput
           placeholder="新密碼"
           secureTextEntry
           style={commonStyles.input}
-          value={password}
-          onChangeText={setPassword}
+          value={newPassword}
+          onChangeText={setNewPassword}
         />
         <TextInput
           placeholder="確認新密碼"
@@ -102,6 +131,9 @@ export default function SettingsScreen() {
         {error ? <Text style={commonStyles.error}>{error}</Text> : null}
         <Pressable style={commonStyles.button} onPress={onSave}>
           <Text style={commonStyles.buttonText}>儲存設定</Text>
+        </Pressable>
+        <Pressable style={commonStyles.secondaryButton} onPress={onChangePassword}>
+          <Text style={commonStyles.secondaryButtonText}>變更密碼</Text>
         </Pressable>
         <Pressable style={commonStyles.secondaryButton} onPress={onSignOut}>
           <Text style={commonStyles.secondaryButtonText}>登出</Text>

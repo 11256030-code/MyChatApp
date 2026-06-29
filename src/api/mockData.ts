@@ -210,11 +210,24 @@ export function mockUpdateProfile(userId: string, input: ProfileInput) {
   user.name = input.name.trim();
   user.birthday = input.birthday;
   user.avatar_url = input.avatar_url;
-  if (input.password) {
-    user.password = input.password;
-  }
 
   return Promise.resolve(cloneUser(user));
+}
+
+export function mockChangePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+) {
+  const user = users.find((entry) => entry.id === userId);
+  if (!user || user.password !== currentPassword) {
+    throw new Error("目前密碼不正確");
+  }
+  if (currentPassword === newPassword) {
+    throw new Error("新密碼不能與目前密碼相同");
+  }
+  user.password = newPassword;
+  return Promise.resolve({ message: "密碼已更新" });
 }
 
 export function mockGetFriends(userId: string) {

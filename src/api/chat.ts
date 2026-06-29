@@ -10,6 +10,7 @@ import type {
 import { ApiRequestError, apiRequest } from "./client";
 import {
     mockAddFriend,
+    mockChangePassword,
     mockGetChats,
     mockGetFriends,
     mockGetMessages,
@@ -86,6 +87,38 @@ export async function updateProfile(userId: string, input: ProfileInput) {
   } catch (error) {
     if (shouldUseMockFallback(error)) {
       return mockUpdateProfile(userId, input);
+    }
+    throw error;
+  }
+}
+
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+) {
+  try {
+    return await apiRequest<{ message: string }>("/auth/change-password", {
+      method: "POST",
+      body: {
+        current_password: currentPassword,
+        new_password: newPassword,
+      },
+    });
+  } catch (error) {
+    const isNetworkError =
+      error instanceof Error &&
+      error.message.includes("無法連線到伺服器");
+    const isMockSession =
+      userId.startsWith("demo-") || userId.startsWith("user-");
+    if (isNetworkError || (isMockSession && shouldUseMockFallback(error))) {
+      return mockChangePassword(userId, currentPassword, newPassword);
+    }
+    if (error instanceof ApiRequestError && error.status === 404) {
+      throw new ApiRequestError(
+        "目前伺服器尚未提供更改密碼功能",
+        error.status,
+      );
     }
     throw error;
   }

@@ -37,6 +37,12 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# Python backend
+__pycache__/
+*.py[cod]
+backend/.venv/
+backend/chat.db
+
 example
 
 # generated native folders
